@@ -4,10 +4,15 @@ const cors = require("cors");
 require("dotenv").config();
 
 const app = express();
-app.use(cors());
+
+// Localhost ke liye CORS configuration
+app.use(cors({
+  origin: "http://localhost:3000", // React ka default port
+  methods: ["GET", "POST"]
+}));
+
 app.use(express.json());
 
-// Nodemailer Transporter Setup
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -16,25 +21,26 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+app.get("/", (req, res) => res.send("Backend Localhost par chal raha hai! 🚀"));
+
 app.post("/send-email", (req, res) => {
-  const { name, email, subject, message } = req.body;
+  const { name, email, message } = req.body;
 
   const mailOptions = {
-    from: email,
+    from: process.env.EMAIL_USER,
     to: process.env.RECEIVER_EMAIL,
-    subject: `New Portfolio Message: ${subject || "No Subject"}`,
-    text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
+    subject: `Portfolio Message from ${name}`,
+    text: `Sender: ${name} (${email})\n\nMessage: ${message}`,
   };
 
-  transporter.sendMail(mailOptions, (error, info) => {
+  transporter.sendMail(mailOptions, (error) => {
     if (error) {
-      console.log(error);
-      return res.status(500).send("Error sending email");
+      console.log("Error:", error);
+      return res.status(500).json(error);
     }
-    res.status(200).send("Email sent successfully!");
+    res.status(200).json({ message: "Sent Successfully" });
   });
 });
 
-app.listen(process.env.PORT, () => {
-  console.log(`Server running on port ${process.env.PORT}`);
-});
+const PORT = 5000; // Localhost port
+app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
