@@ -5,9 +5,8 @@ require("dotenv").config();
 
 const app = express();
 
-// Localhost ke liye CORS configuration
 app.use(cors({
-  origin: "http://localhost:3000", // React ka default port
+  origin: "http://localhost:3000",
   methods: ["GET", "POST"]
 }));
 
@@ -19,6 +18,14 @@ const transporter = nodemailer.createTransport({
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+});
+
+transporter.verify((error, success) => {
+  if (error) {
+    console.log("❌ Transporter Connection Error:", error);
+  } else {
+    console.log("✅ Server is ready to send emails!");
+  }
 });
 
 app.get("/", (req, res) => res.send("Backend Localhost par chal raha hai! 🚀"));
@@ -33,14 +40,19 @@ app.post("/send-email", (req, res) => {
     text: `Sender: ${name} (${email})\n\nMessage: ${message}`,
   };
 
-  transporter.sendMail(mailOptions, (error) => {
+
+  transporter.sendMail(mailOptions, (error, info) => {
     if (error) {
-      console.log("Error:", error);
-      return res.status(500).json(error);
+      console.log("❌ Email Sending Error:", error); 
+      return res.status(500).json({ 
+        message: "Email sending failed", 
+        details: error.message 
+      });
     }
+    console.log("📧 Email sent successfully:", info.response);
     res.status(200).json({ message: "Sent Successfully" });
   });
 });
 
-const PORT = 5000; // Localhost port
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+const PORT = 5000;
+app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
